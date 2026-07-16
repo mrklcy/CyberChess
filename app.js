@@ -10,12 +10,12 @@ const threatText = document.querySelector("#threatText");
 
 const files = ["a", "b", "c", "d", "e", "f", "g", "h"];
 const pieceGlyphs = {
-  wK: "\u2654",
-  wQ: "\u2655",
-  wR: "\u2656",
-  wB: "\u2657",
-  wN: "\u2658",
-  wP: "\u2659",
+  wK: "\u265A",
+  wQ: "\u265B",
+  wR: "\u265C",
+  wB: "\u265D",
+  wN: "\u265E",
+  wP: "\u265F",
   bK: "\u265A",
   bQ: "\u265B",
   bR: "\u265C",
@@ -48,6 +48,7 @@ let scannedMoves;
 let lastMoveDx;
 let lastMoveDy;
 let animateLastMove;
+let capturedPiece;
 
 function boot() {
   board = createInitialBoard();
@@ -59,6 +60,7 @@ function boot() {
   lastMoveDx = 0;
   lastMoveDy = 0;
   animateLastMove = false;
+  capturedPiece = null;
   turn = "w";
   gameOver = false;
   integrity = 100;
@@ -159,6 +161,14 @@ function render() {
         }
 
         square.append(pieceEl);
+      }
+
+      // Render disintegrating captured piece
+      if (capturedPiece && squareName === capturedPiece.square) {
+        const capturedEl = document.createElement("span");
+        capturedEl.className = `piece ${capturedPiece.color === "w" ? "white" : "black"} captured-disintegrate`;
+        capturedEl.textContent = pieceGlyphs[`${capturedPiece.color}${capturedPiece.type}`];
+        square.append(capturedEl);
       }
 
       boardEl.append(square);
@@ -288,7 +298,6 @@ function handleCommand(rawCommand) {
 }
 
 function scanCommand(sourceArg) {
-  if (phase !== "scan") return addLog("error", "Protocol mismatch. Finish the current phase first.");
   const source = parseSquare(sourceArg);
   if (!source) return addLog("error", "Scan needs a board square, like 'scan g1'.");
 
@@ -299,6 +308,7 @@ function scanCommand(sourceArg) {
   if (moves.length === 0) return addLog("alert", `${source} has no safe routes in this simulation.`);
 
   scannedFrom = source;
+  analyzedTo = null; // Reset target on new scan selection
   selectedSquares = [source];
   scannedMoves = moves;
   phase = "analyze";
@@ -308,7 +318,7 @@ function scanCommand(sourceArg) {
 }
 
 function analyzeCommand(targetArg) {
-  if (phase !== "analyze") return addLog("error", "Run 'scan <source>' before analysis.");
+  if (!scannedFrom) return addLog("error", "Run 'scan <source>' before analysis.");
   const target = parseSquare(targetArg);
   if (!target) return addLog("error", "Analyze needs a board square, like 'analyze e4'.");
 
@@ -352,11 +362,14 @@ function executeMove(from, to, color) {
   captureSquare = target ? to : null;
   if (target) {
     captures += color === "w" ? 1 : 0;
+    capturedPiece = { type: target.type, color: target.color, square: to };
     addLog(color === "w" ? "alert" : "error", `${color === "w" ? "Contained" : "Breach"}: ${pieceName(target)} removed at ${to}.`);
     if (target.type === "K") {
       gameOver = true;
       addLog(color === "w" ? "system" : "error", color === "w" ? "Black king captured. Training objective complete." : "White king captured. The incident escalated.");
     }
+  } else {
+    capturedPiece = null;
   }
 
   const a = squareToCoords(from);
@@ -368,8 +381,19 @@ function executeMove(from, to, color) {
   board[to] = moving;
   delete board[from];
   lastMove = [from, to];
+
+  // Enable 3D perspective during movement
+  const boardWrap = document.querySelector(".board-wrap");
+  if (boardWrap) boardWrap.classList.add("moving-3d");
+
   window.setTimeout(() => {
     captureSquare = null;
+    capturedPiece = null;
+
+    // Disable 3D perspective once movement finishes
+    const boardWrap = document.querySelector(".board-wrap");
+    if (boardWrap) boardWrap.classList.remove("moving-3d");
+
     render();
   }, 700);
 
