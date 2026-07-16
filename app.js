@@ -1,4 +1,4 @@
-﻿const boardEl = document.querySelector("#board");
+const boardEl = document.querySelector("#board");
 const logEl = document.querySelector("#log");
 const formEl = document.querySelector("#commandForm");
 const inputEl = document.querySelector("#commandInput");
@@ -44,6 +44,10 @@ let integrity;
 let captures;
 let lastMove;
 let captureSquare;
+let scannedMoves;
+let lastMoveDx;
+let lastMoveDy;
+let animateLastMove;
 
 function boot() {
   board = createInitialBoard();
@@ -51,6 +55,10 @@ function boot() {
   scannedFrom = null;
   analyzedTo = null;
   selectedSquares = [];
+  scannedMoves = [];
+  lastMoveDx = 0;
+  lastMoveDy = 0;
+  animateLastMove = false;
   turn = "w";
   gameOver = false;
   integrity = 100;
@@ -92,10 +100,64 @@ function render() {
       if (captureSquare === squareName) square.classList.add("capture-flash");
       if (scannedFrom === squareName || analyzedTo === squareName) square.classList.add("target");
 
+      // Render scanning overlays
+      if (scannedFrom === squareName) {
+        square.classList.add("scanning");
+        const scanOverlay = document.createElement("div");
+        scanOverlay.className = "scan-overlay";
+        scanOverlay.innerHTML = `
+          <div class="corner tl"></div>
+          <div class="corner tr"></div>
+          <div class="corner bl"></div>
+          <div class="corner br"></div>
+          <div class="scan-line"></div>
+        `;
+        square.append(scanOverlay);
+      }
+
+      // Render analyzing overlays
+      if (analyzedTo === squareName) {
+        square.classList.add("analyzing");
+        const analyzeOverlay = document.createElement("div");
+        analyzeOverlay.className = "analyze-overlay";
+        analyzeOverlay.innerHTML = `
+          <div class="corner tl"></div>
+          <div class="corner tr"></div>
+          <div class="corner bl"></div>
+          <div class="corner br"></div>
+          <div class="analyze-ring"></div>
+          <div class="analyze-label">ANLZ</div>
+        `;
+        square.append(analyzeOverlay);
+      }
+
+      // Highlight legal routes
+      if (scannedMoves.includes(squareName)) {
+        if (!piece) {
+          square.classList.add("legal-route");
+          const dot = document.createElement("div");
+          dot.className = "legal-route-dot";
+          square.append(dot);
+        } else if (piece.color === "b") {
+          square.classList.add("legal-capture");
+          const captureRing = document.createElement("div");
+          captureRing.className = "legal-capture-ring";
+          square.append(captureRing);
+        }
+      }
+
       if (piece) {
         const pieceEl = document.createElement("span");
         pieceEl.className = `piece ${piece.color === "w" ? "white" : "black"}`;
         pieceEl.textContent = pieceGlyphs[`${piece.color}${piece.type}`];
+
+        // Animate piece movement from the last move coordinates
+        if (animateLastMove && lastMove.length === 2 && squareName === lastMove[1]) {
+          pieceEl.style.setProperty("--dx", lastMoveDx);
+          pieceEl.style.setProperty("--dy", lastMoveDy);
+          pieceEl.classList.add("animate-move");
+        }
+
         square.append(pieceEl);
       }
 
@@ -108,6 +170,7 @@ function render() {
   integrityText.textContent = `${integrity}%`;
   captureText.textContent = String(captures);
   threatText.textContent = integrity > 80 ? "Low" : integrity > 55 ? "Elevated" : "Critical";
+  animateLastMove = false;
 }
 
 function describeSquare(squareName) {
@@ -237,6 +300,7 @@ function scanCommand(sourceArg) {
 
   scannedFrom = source;
   selectedSquares = [source];
+  scannedMoves = moves;
   phase = "analyze";
   addLog("system", `Scan complete: ${pieceName(piece)} at ${source}. Legal routes: ${moves.join(", ")}.`);
   addLog("alert", lessonBank[Math.floor(Math.random() * lessonBank.length)]);
@@ -295,6 +359,12 @@ function executeMove(from, to, color) {
     }
   }
 
+  const a = squareToCoords(from);
+  const b = squareToCoords(to);
+  lastMoveDx = a.file - b.file;
+  lastMoveDy = b.rank - a.rank;
+  animateLastMove = true;
+
   board[to] = moving;
   delete board[from];
   lastMove = [from, to];
@@ -314,6 +384,7 @@ function resetWorkflow() {
   scannedFrom = null;
   analyzedTo = null;
   selectedSquares = [];
+  scannedMoves = [];
 }
 
 function redTeamMove() {
