@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cyber Checkmate</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="board-panel" aria-label="Cyber chess board">
+        <div class="topbar">
+          <div>
+            <h1>Cyber Checkmate</h1>
+            <p>Win the board by following the operator workflow.</p>
+          </div>
+          <div class="status-pill" id="statusPill">White operator turn</div>
+        </div>
+
+        <div class="board-wrap">
+          <div class="rank-labels" aria-hidden="true">
+            <span>8</span><span>7</span><span>6</span><span>5</span>
+            <span>4</span><span>3</span><span>2</span><span>1</span>
+          </div>
+          <div class="board" id="board" role="grid" aria-label="Chess board"></div>
+          <div class="file-labels" aria-hidden="true">
+            <span>a</span><span>b</span><span>c</span><span>d</span>
+            <span>e</span><span>f</span><span>g</span><span>h</span>
+          </div>
+        </div>
+      </section>
+
+      <aside class="ops-panel">
+        <section class="terminal">
+          <div class="terminal-head">
+            <span></span><span></span><span></span>
+            <strong>operator console</strong>
+          </div>
+          <div class="log" id="log" aria-live="polite"></div>
+          <form id="commandForm" class="command-line">
+            <label for="commandInput">cmd</label>
+            <input
+              id="commandInput"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="scan e2"
+              autofocus
+            />
+            <button type="submit">Run</button>
+          </form>
+        </section>
+
+        <section class="hud-grid">
+          <div class="hud-item">
+            <span>Phase</span>
+            <strong id="phaseText">Scan source</strong>
+          </div>
+          <div class="hud-item">
+            <span>Integrity</span>
+            <strong id="integrityText">100%</strong>
+          </div>
+          <div class="hud-item">
+            <span>Captures</span>
+            <strong id="captureText">0</strong>
+          </div>
+          <div class="hud-item">
+            <span>Threat</span>
+            <strong id="threatText">Low</strong>
+          </div>
+        </section>
+
+        <section class="briefing">
+          <h2>Command Runbook</h2>
+          <dl>
+            <dt>scan e2</dt>
+            <dd>Identify the source asset and its legal routes.</dd>
+            <dt>analyze e4</dt>
+            <dd>Validate the destination before execution.</dd>
+            <dt>move e2 e4</dt>
+            <dd>Deploy the piece after scan and analysis match.</dd>
+            <dt>help</dt>
+            <dd>Print command help in the console.</dd>
+            <dt>reset</dt>
+            <dd>Start a fresh incident simulation.</dd>
+          </dl>
+        </section>
+      </aside>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
